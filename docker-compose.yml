@@ -1,0 +1,88 @@
+version: "3"
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: ./docker/pg-Dockerfile
+    ports:
+      - 5432:5432
+    volumes:
+      - .data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  subquery-node:
+    image: onfinality/subql-node-cosmos:latest
+    depends_on:
+      "postgres":
+        condition: service_healthy
+    restart: always
+    environment:
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_DATABASE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+    volumes:
+      - ./:/app
+    command:
+#      - force-clean
+#      - --debug
+      - -f=/app
+      - --db-schema=app
+      - --disable-historical=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://subquery-node:3000/ready"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  graphql-engine:
+    image: onfinality/subql-query:latest
+    ports:
+      - 3000:3000
+    depends_on:
+      "postgres":
+        condition: service_healthy
+      "subquery-node":
+        condition: service_started
+    restart: always
+    environment:
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_DATABASE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+    command:
+      - --name=app
+      - --playground
+      - --indexer=http://subquery-node:3000
+
+  fetch-node:
+    image: fetchai/fetchd:0.10.6
+    entrypoint: ["sh", "-c", "/scripts/start_cosmos_node.sh"]
+    environment:
+      BINARY: fetchd
+      DENOM: atestfet
+      MONIKER: fetchnode
+      CHAIN_ID: fetchchain
+      SET_CUSTOM_CONSENSUS_PARAMS: 1
+      VALIDATOR_MNEMONIC: "nut grocery slice visit barrel peanut tumble patch slim logic install evidence fiction shield rich brown around arrest fresh position animal butter forget cost"
+      EXTRA_GENESIS_ACCOUNTS: >
+        fetch1vmvxe6xgkqfe9fsp63p4f5pgp0jqe7h6505pnk:1000000000000000000000000atestfet
+        fetch1ka9j6a8u0lnt8rm86d9ntyurm39jylcu3dstng:1000000000000000000000000atestfet
+        fetch108g2rh9e8r65hq69dm9ca76ttmke3utdy983mf:1000000000000000000000000atestfet
+    volumes:
+      - ./scripts/start_cosmos_node.sh:/scripts/start_cosmos_node.sh:ro
+    ports:
+      - 1317:1317
+      - 26657:26657
+      - 9090:9090
+    expose:
+      - 26656

@@ -1,0 +1,28 @@
+[project]
+name = "workshop-example"
+authors = [ "joe <jonathan.sumner@fetch.ai>",]
+keyring_backend = "test"
+
+[profile.test]
+default = true
+
+[profile.test.network]
+name = "fetchnode"
+chain_id = "fetchchain"
+fee_minimum_gas_price = 5000000000
+fee_denomination = "atestfet"
+staking_denomination = "atestfet"
+url = "grpc+http://127.0.0.1:9090/"
+is_local = false
+
+[profile.test.contracts.workshopNFT]
+name = "workshopNFT"
+contract = "workshopNFT"
+network = "fetchnode"
+deployer_key = "validator"
+init_funds = ""
+
+[profile.test.contracts.workshopNFT.init]
+minter = "fetch1wurz7uwmvchhc8x0yztc7220hxs9jxdjdsrqmn"
+name = "test"
+symbol = "TEST"
