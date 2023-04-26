@@ -162,7 +162,7 @@ workshopNFT.execute(mint_msg, wallets['validator'])
 After this, we should have a print message in the output log for our indexer that says `[NFT Mint Handled]`.
 This means our indexer has recognised the NFT mint event, as well as constructed and saved our `NFT` entity.
 
-##### Querying the NFT Entity
+#### Querying the NFT Entity
 By visiting [http://localhost:3000/](http://localhost:3000/), we should be greeted with a GraphQL playground.
 Here we can query any entities that have been indexed.
 
